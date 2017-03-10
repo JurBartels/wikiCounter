@@ -5,20 +5,22 @@ import (
   "net/http"
   "encoding/json"
   "strconv"
+  "github.com/tealeg/xlsx"
 )
 
 func main(){
 
-  for i := 1; i <= 20; i++ {
-    if i != 4 {
-      char_count, err := getCharCount(i)
-      if err != nil {
-        fmt.Println(err)
-      }
-      fmt.Println(i)
-      fmt.Println(char_count)
-    }
-  }
+  writeToExel()
+  // for i := 1; i <= 20; i++ {
+  //   if i != 4 {
+  //     char_count, err := getCharCount(i)
+  //     if err != nil {
+  //       fmt.Println(err)
+  //     }
+  //     fmt.Println(i)
+  //     fmt.Println(char_count)
+  //   }
+  // }
 }
 
 func getCharCount(grpnum int) (float64, error) {
@@ -47,4 +49,19 @@ func getJSON(url string, target interface{}) error {
   }
   defer r.Body.Close()
   return json.NewDecoder(r.Body).Decode(target)
+}
+
+func writeToExel() error {
+  file := xlsx.NewFile()
+  sheet, err := file.AddSheet("test")
+  if err != nil {
+    return err
+  }
+  row := sheet.AddRow()
+  cell := row.AddCell()
+  cell.Value = "test"
+  err := file.Save("testfile.xlsx")
+  if err != nil{
+    return err
+  }
 }
