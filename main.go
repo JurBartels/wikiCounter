@@ -10,7 +10,8 @@ import (
 
 func main(){
 
-  writeToExel()
+  writeToExel(1,4,"yay")
+  fmt.Println("done")
   // for i := 1; i <= 20; i++ {
   //   if i != 4 {
   //     char_count, err := getCharCount(i)
@@ -51,17 +52,17 @@ func getJSON(url string, target interface{}) error {
   return json.NewDecoder(r.Body).Decode(target)
 }
 
-func writeToExel() error {
-  file := xlsx.NewFile()
-  sheet, err := file.AddSheet("test")
+func writeToExel(row int, col int, val string) error {
+  file,err := xlsx.OpenFile("testfile.xlsx")
   if err != nil {
     return err
   }
-  row := sheet.AddRow()
-  cell := row.AddCell()
-  cell.Value = "test"
-  err := file.Save("testfile.xlsx")
+  sheet := file.Sheets[0]
+  cell := sheet.Cell(row,col)
+  cell.Value = val
+  err = file.Save("testfile.xlsx")
   if err != nil{
     return err
   }
+  return nil
 }
