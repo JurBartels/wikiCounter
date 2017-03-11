@@ -6,28 +6,50 @@ import (
   "encoding/json"
   "strconv"
   "github.com/tealeg/xlsx"
+  "os"
 )
+
+var filename = "log.xlsx"
 
 func main(){
 
-  writeToExel(1,4,"yay")
-  fmt.Println("done")
-  // for i := 1; i <= 20; i++ {
-  //   if i != 4 {
-  //     char_count, err := getCharCount(i)
-  //     if err != nil {
-  //       fmt.Println(err)
-  //     }
-  //     fmt.Println(i)
-  //     fmt.Println(char_count)
-  //   }
-  // }
+  var file *xlsx.File
+  var err error
+
+  if  _, err = os.Stat(filename); os.IsNotExist(err){
+    fmt.Println("file not found")
+    file , err = createFile(filename)
+    if err != nil {
+      fmt.Println(err)
+    }
+  } else {
+    file,err = xlsx.OpenFile(filename)
+    if err != nil {
+      fmt.Println(err)
+    }
+  }
+
+  results := make(map[int]float64)
+
+  for i := 1; i <= 20; i++ {
+    if i != 4 {
+      char_count, err := getCharCount(i)
+      if err != nil {
+        fmt.Println(err)
+      }
+      results[i] = char_count
+    }
+  }
+
+
+  writeToExel(1, filename, results, file)
 }
 
 func getCharCount(grpnum int) (float64, error) {
   conc := strconv.Itoa(grpnum)
   var f interface{}
-  err := getJSON("http://cstwiki.wtb.tue.nl/api.php?action=query&prop=info&titles=PRE2016_3_Groep"+ conc +"&format=json", &f)
+  err := getJSON("http://cstwiki.wtb.tue.nl/api.php?action=query&prop=info&" +
+    "titles=PRE2016_3_Groep"+ conc +"&format=json", &f)
   if err != nil{
     return 0,err
   }
@@ -52,17 +74,51 @@ func getJSON(url string, target interface{}) error {
   return json.NewDecoder(r.Body).Decode(target)
 }
 
-func writeToExel(row int, col int, val string) error {
-  file,err := xlsx.OpenFile("testfile.xlsx")
-  if err != nil {
-    return err
-  }
+func writeToExel(col int, filename string, resultmap map[int]float64, file *xlsx.File) error {
   sheet := file.Sheets[0]
-  cell := sheet.Cell(row,col)
-  cell.Value = val
-  err = file.Save("testfile.xlsx")
+  for i,e := range resultmap {
+    if i != 4 {
+      cell := sheet.Cell(i,col)
+      cell.SetFloat(e)
+    }
+  }
+  err := file.Save(filename)
   if err != nil{
     return err
   }
   return nil
+}
+
+func createFile(filename string) (*xlsx.File , error) {
+  file := xlsx.NewFile()
+  sheet, err := file.AddSheet("Sheet1")
+  if err != nil {
+      return nil,err
+  }
+  fillNewFile(sheet)
+  err = file.Save(filename)
+  if err != nil {
+      return nil,err
+  }
+  return file, nil
+}
+
+func fillNewFile(sheet *xlsx.Sheet) {
+  for i := 1;i <= 20 ; i++ {
+    cell := sheet.Cell(i,0)
+    cell.Value  = "Group " + strconv.Itoa(i)
+  }
+}
+
+func readKey(file *xlsx.File) (float64, error) {
+  sheet := file.Sheets[0]
+  cell := sheet.Cell(22,0)
+  current_key, err := cell.Float()
+  return current_key,err
+}
+
+func updateKey(file *xlsx.File, val float64){
+  sheet := file.Sheets[0]
+  cell := sheet.Cell(22,0)
+  cell.SetFloat(val)
 }
