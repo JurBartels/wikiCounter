@@ -7,6 +7,7 @@ import (
   "strconv"
   "github.com/tealeg/xlsx"
   "os"
+  "time"
 )
 
 var filename = "log.xlsx"
@@ -41,8 +42,12 @@ func main(){
     }
   }
 
-
-  writeToExel(1, filename, results, file)
+  key, er := readKey(file)
+  if er != nil{
+    fmt.Println(er)
+  }
+  updateKey(filename, file, key+1)
+  writeToExel(int(key), filename, results, file)
 }
 
 func getCharCount(grpnum int) (float64, error) {
@@ -76,6 +81,9 @@ func getJSON(url string, target interface{}) error {
 
 func writeToExel(col int, filename string, resultmap map[int]float64, file *xlsx.File) error {
   sheet := file.Sheets[0]
+  t := time.Now().Format("02 Jan 06 15:04 MST")
+  cell := sheet.Cell(0,col)
+  cell.Value = t
   for i,e := range resultmap {
     if i != 4 {
       cell := sheet.Cell(i,col)
@@ -108,6 +116,8 @@ func fillNewFile(sheet *xlsx.Sheet) {
     cell := sheet.Cell(i,0)
     cell.Value  = "Group " + strconv.Itoa(i)
   }
+  cell := sheet.Cell(22,0)
+  cell.SetFloat(1)
 }
 
 func readKey(file *xlsx.File) (float64, error) {
@@ -117,8 +127,9 @@ func readKey(file *xlsx.File) (float64, error) {
   return current_key,err
 }
 
-func updateKey(file *xlsx.File, val float64){
+func updateKey(filename string, file *xlsx.File, val float64){
   sheet := file.Sheets[0]
   cell := sheet.Cell(22,0)
   cell.SetFloat(val)
+  file.Save(filename)
 }
